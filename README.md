@@ -38,4 +38,4 @@ curl -X POST http://localhost:7000/huggingface/embedding \
 
 ## For triggering CICD
 
-3
+4

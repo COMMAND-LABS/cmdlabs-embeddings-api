@@ -34,7 +34,7 @@ gcloud iam service-accounts add-iam-policy-binding 382688591561-compute@develope
 
 ## Create the artifact registry for storing the built docker images
 
-- `gcloud artifacts repositories create cmdlabs-agent-api --repository-format docker --project command-labs --location us-central1`
+- `gcloud artifacts repositories create cmdlabs-embeddings-api --repository-format docker --project command-labs --location us-central1`
 
 ## Enable Google Secret Manager
 
