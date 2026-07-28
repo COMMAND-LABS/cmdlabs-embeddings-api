@@ -8,8 +8,8 @@ Documenting process of migrating Kalygo into the cmdlabs project in GCP
 
 ```sh
 gcloud beta run domain-mappings create \
-  --service=cmdlabs-agent-api-service \
-  --domain=agent-api.cmdlabs.io \
+  --service=cmdlabs-embeddings-api-service \
+  --domain=embeddings-api.cmdlabs.io \
   --region=us-east1 \
   --project=command-labs
 ```
@@ -22,7 +22,7 @@ gcloud beta run domain-mappings create \
 
 ```
 gcloud beta run domain-mappings describe \
-  --domain=agent-api.cmdlabs.io --region=us-east1 --project=command-labs \
+  --domain=embeddings-api.cmdlabs.io --region=us-east1 --project=command-labs \
   --format="yaml(status.conditions)"
 ```
 

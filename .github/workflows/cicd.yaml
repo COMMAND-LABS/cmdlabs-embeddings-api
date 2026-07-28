@@ -7,7 +7,7 @@ on:
 env:
   PROJECT_ID: command-labs # Google Cloud project id
   GAR_LOCATION: us-central1 # Artifact Registry location
-  SERVICE_NAME: cmdlabs-embeddings-service # Cloud Run service name
+  SERVICE_NAME: cmdlabs-embeddings-api-service # Cloud Run service name
   SERVICE_REGION: us-east1 # Cloud Run service region
   ARTIFACTORY_URL: us-central1-docker.pkg.dev/command-labs/cmdlabs-embeddings-api/cmdlabs-embeddings-api
   MEMORY: 2Gi # Adjust this as needed
