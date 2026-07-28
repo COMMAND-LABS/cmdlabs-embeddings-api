@@ -1,0 +1,41 @@
+# TLDR
+
+Documenting process of migrating Kalygo into the cmdlabs project in GCP 
+
+## Add `GCP_SA` as a GitHub Repository Secret
+
+- Go to `https://console.cloud.google.com/iam-admin/iam?project=command-labs`
+- Create a "Service Account" [called `command-labs-agent-api-cicd`]
+- Download JSON associated with the "Service Account"
+- Add a Repository secret called `GCP_SA` with the Service Account JSON as the value
+
+## Enable `Artifact Registry` in GCP project
+
+`gcloud projects list`
+`gcloud config set project command-labs`
+`gcloud services enable artifactregistry.googleapis.com`
+```sh
+gcloud projects add-iam-policy-binding command-labs \
+  --member="serviceAccount:command-labs-embeddings-api-ci@command-labs.iam.gserviceaccount.com" \
+  --role="roles/artifactregistry.writer"
+```
+`gcloud services enable run.googleapis.com`
+```sh
+gcloud projects add-iam-policy-binding command-labs \
+  --member="serviceAccount:command-labs-embeddings-api-ci@command-labs.iam.gserviceaccount.com" \
+  --role="roles/run.admin"
+```
+```sh
+gcloud iam service-accounts add-iam-policy-binding 382688591561-compute@developer.gserviceaccount.com \
+  --member="serviceAccount:command-labs-embeddings-api-ci@command-labs.iam.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountUser"
+```
+`gcloud services enable secretmanager.googleapis.com --project=command-labs`
+
+## Create the artifact registry for storing the built docker images
+
+- `gcloud artifacts repositories create cmdlabs-agent-api --repository-format docker --project command-labs --location us-central1`
+
+## Enable Google Secret Manager
+
+- `./READMEs/deploying_to_command_labs/migrate_secrets.sh` <!-- Moved the secrets from the `kalygo` GCP project to the `command-labs` GCP project -->
