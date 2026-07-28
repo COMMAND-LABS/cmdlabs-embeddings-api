@@ -1,12 +1,12 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: kalygo-embeddings-service
+  name: cmdlabs-embeddings-service
 spec:
   template:
     spec:
       containers:
-        - image: us-central1-docker.pkg.dev/kalygo-436411/kalygo-embeddings-api/kalygo-embeddings-api
+        - image: us-central1-docker.pkg.dev/command-labs/cmdlabs-embeddings-api/cmdlabs-embeddings-api
           resources:
             limits:
               memory: "4Gi"
