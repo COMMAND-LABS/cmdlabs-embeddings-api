@@ -1,7 +1,7 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: cmdlabs-embeddings-service
+  name: cmdlabs-embeddings-api-service
 spec:
   template:
     spec:
