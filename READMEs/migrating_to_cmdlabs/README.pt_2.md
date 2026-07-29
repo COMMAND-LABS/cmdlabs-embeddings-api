@@ -28,4 +28,4 @@ gcloud beta run domain-mappings describe \
 
 ## Hitting the desired domain should return a successful response if successful. 
 
-curl -I https://agent-api.cmdlabs.io
+curl -I https://embeddings-api.cmdlabs.io
