@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException, status
@@ -12,6 +13,8 @@ from .db.models import ApiKey, Account, ApiKeyStatus
 from sqlalchemy import func
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 SECRET_KEY = os.getenv('AUTH_SECRET_KEY')
 ALGORITHM = os.getenv('AUTH_ALGORITHM')
@@ -36,18 +39,12 @@ async def get_current_user(request: Request):
         # Extract token from Authorization Bearer header
         authorization = request.headers.get("Authorization")
 
-        print("---???---", authorization)
-        print('SECRET_KEY: ', SECRET_KEY)
-        print('os.getenv(AUTH_SECRET_KEY): ', os.getenv('AUTH_SECRET_KEY'))
-        print('ALGORITHM: ', ALGORITHM)
-        print('os.getenv(AUTH_ALGORITHM): ', os.getenv('AUTH_ALGORITHM'))
         
         if not authorization:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
         
         # Extract token from "Bearer <token>" format
 
-        print('authorization: ', authorization)
 
         parts = authorization.split(" ")
         if len(parts) != 2 or parts[0].lower() != "bearer":
@@ -55,11 +52,9 @@ async def get_current_user(request: Request):
         
         token = parts[1]
 
-        print(token)
 
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
-        print('payload: ', payload)
 
         email: str | None = payload.get('sub')
         account_id: str = payload.get('id')
@@ -90,16 +85,11 @@ async def get_current_user_or_api_key(
     try:
         authorization = request.headers.get("Authorization", "")
         
-        print(f'--- Authorization header present: {bool(authorization)} ---')
         
         # Check if it's a Bearer token (JWT format)
         if authorization.startswith("Bearer "):
             token = authorization.replace("Bearer ", "").strip()
             
-            print(f'--- Token extracted, length: {len(token)} ---')
-            print(f'--- Token preview: {token[:20]}... ---')
-            print(f'--- SECRET_KEY present: {bool(SECRET_KEY)} ---')
-            print(f'--- ALGORITHM: {ALGORITHM} ---')
             
             # Try to decode as JWT
             try:
@@ -108,24 +98,17 @@ async def get_current_user_or_api_key(
                 account_id = payload.get('id')
                 
                 if email:
-                    print(f'--- JWT Authentication successful for email: {email} ---')
                     return {
                         'email': email,
                         'id': int(account_id) if isinstance(account_id, str) else account_id,
                         'auth_type': 'jwt'
                     }
-                else:
-                    print('--- JWT decoded but no email found in payload ---')
             except JWTError as e:
-                # Log JWT errors for debugging
-                print(f'--- JWT decode error: {type(e).__name__}: {str(e)} ---')
                 # Not a valid JWT, might be an API key
                 pass
             except (KeyError, ValueError) as e:
-                print(f'--- JWT payload error: {type(e).__name__}: {str(e)} ---')
                 pass
     except Exception as e:
-        print(f'--- Unexpected error in JWT auth: {type(e).__name__}: {str(e)} ---')
         pass
     
     # Try API key from headers
@@ -137,19 +120,14 @@ async def get_current_user_or_api_key(
         potential_key = auth_header.replace("Bearer ", "").strip()
         if potential_key.startswith("kalygo_"):
             api_key = potential_key
-            print(f'--- API key detected in Authorization header ---')
     
     # Also check X-API-Key header
     if not api_key:
         x_api_key = request.headers.get("X-API-Key", "").strip()
         if x_api_key.startswith("kalygo_"):
             api_key = x_api_key
-            print(f'--- API key detected in X-API-Key header ---')
     
     if api_key:
-        print(f'--- Attempting API Key authentication ---')
-        print(f'--- API key length: {len(api_key)} ---')
-        print(f'--- API key full preview: {api_key[:30]}... ---')
         
         # Extract prefix for fast lookup
         key_prefix = api_key[:20] if len(api_key) >= 20 else api_key
@@ -161,16 +139,10 @@ async def get_current_user_or_api_key(
         ).first()
         
         if api_key_record:
-            print(f'--- Found API key record in database (id: {api_key_record.id}) ---')
-            print(f'--- Stored key_prefix: {api_key_record.key_prefix} ---')
-            print(f'--- Verifying hash with passlib sha256_crypt... ---')
             
             # Verify the full key against hash
             from .utils.api_key_utils import verify_api_key
             
-            # Debug: show stored hash format
-            stored_hash = api_key_record.key_hash
-            print(f'--- Stored key hash (preview): {stored_hash[:30]}... ---')
             
             if verify_api_key(api_key, api_key_record.key_hash):
                 # Update last_used_at
@@ -180,20 +152,17 @@ async def get_current_user_or_api_key(
                 # Get account email
                 account = db.query(Account).filter(Account.id == api_key_record.account_id).first()
                 if account:
-                    print(f'--- API Key Authentication successful for account: {account.email} ---')
                     return {
                         'email': account.email,
                         'id': api_key_record.account_id,
                         'auth_type': 'api_key',
                         'api_key_id': api_key_record.id  # Useful for logging
                     }
-            else:
-                print(f'--- API key hash verification failed ---')
-        else:
-            print(f'--- No active API key found with prefix: {key_prefix} ---')
     
-    # No valid auth found
-    print('--- Authentication failed - no valid JWT or API key found ---')
+    # No valid auth found. Log THAT it failed, never the header, token, key,
+    # hash, secret or email: these print()s used to write all of those to the
+    # service logs on every request.
+    logger.info("Embeddings auth failed: no valid JWT or API key")
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Authentication required. Provide JWT token or API key in Authorization/X-API-Key header."

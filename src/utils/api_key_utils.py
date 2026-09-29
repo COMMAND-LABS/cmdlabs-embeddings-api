@@ -1,3 +1,4 @@
+import logging
 import secrets
 from passlib.context import CryptContext
 
@@ -33,7 +34,7 @@ def verify_api_key(plaintext_key: str, hashed_key: str) -> bool:
     try:
         return crypt_context.verify(plaintext_key, hashed_key)
     except Exception as e:
-        print(f"[API KEY UTILS] Error verifying API key: {e}")
+        logging.getLogger(__name__).warning("Error verifying API key: %s", type(e).__name__)
         return False
 
 
