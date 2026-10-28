@@ -30,6 +30,9 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 bcrypt_context = CryptContext(schemes=["sha256_crypt"])
 
+# Keys minted by the API are "cmdlabs_live_..."; "kalygo_" keys predate the rebrand.
+API_KEY_PREFIXES = ("cmdlabs_", "kalygo_")
+
 async def get_current_user(request: Request):
     """
     Legacy JWT-only authentication.
@@ -114,17 +117,17 @@ async def get_current_user_or_api_key(
     # Try API key from headers
     api_key = None
     
-    # Check Authorization header: "Bearer kalygo_live_..."
+    # Check Authorization header: "Bearer cmdlabs_live_..."
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         potential_key = auth_header.replace("Bearer ", "").strip()
-        if potential_key.startswith("kalygo_"):
+        if potential_key.startswith(API_KEY_PREFIXES):
             api_key = potential_key
     
     # Also check X-API-Key header
     if not api_key:
         x_api_key = request.headers.get("X-API-Key", "").strip()
-        if x_api_key.startswith("kalygo_"):
+        if x_api_key.startswith(API_KEY_PREFIXES):
             api_key = x_api_key
     
     if api_key:
